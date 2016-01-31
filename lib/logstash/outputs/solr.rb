@@ -77,7 +77,8 @@ class LogStash::Outputs::Solr < LogStash::Outputs::Base
   def flush(events, close=false)
     documents = []
 
-    @fields = @defined_fields.nil? ? get_fields : @defined_fields
+    @fields = @defined_fields.nil? || @defined_fields.empty? ? get_fields : @defined_fields
+
     @unique_key = @unique_key_field.nil? ? get_unique_key : @unique_key_field
 
     events.each do |event|
@@ -99,21 +100,21 @@ class LogStash::Outputs::Solr < LogStash::Outputs::Base
         end
       end
 
-      @logger.info "Record: %s" % document.inspect
+      @logger.info 'Record: %s' % document.inspect
 
       documents.push(document)
     end
 
     if @mode == MODE_STANDALONE then
       @solr.add documents, :params => {:commit => true}
-      @logger.info "Added %d document(s) to Solr" % documents.count
+      @logger.info 'Added %d document(s) to Solr' % documents.count
     elsif @mode == MODE_SOLRCLOUD then
       @solr.add documents, collection: @collection, :params => {:commit => true}
-      @logger.info "Added %d document(s) to Solr" % documents.count
+      @logger.info 'Added %d document(s) to Solr' % documents.count
     end
 
     rescue Exception => e
-      @logger.warn("An error occurred while indexing: #{e.message}")
+      @logger.warn('An error occurred while indexing: #{e.message}')
   end # def flush
 
   public
@@ -134,12 +135,12 @@ class LogStash::Outputs::Solr < LogStash::Outputs::Base
     end
 
     unique_key = response['uniqueKey']
-    @logger.info "Unique key: #{unique_key}"
+    @logger.info 'Unique key: #{unique_key}'
 
     return unique_key
 
     rescue Exception => e
-      @logger.warn "Unique key: #{e.message}"
+      @logger.warn 'Unique key: #{e.message}'
   end # def get_unique_key
 
   private
@@ -156,11 +157,11 @@ class LogStash::Outputs::Solr < LogStash::Outputs::Base
     response['fields'].each do |field|
       fields.push(field['name'])
     end
-    @logger.info "Fields: #{fields}"
+    @logger.info 'Fields: #{fields}'
 
     return fields
 
     rescue Exception => e
-      @logger.warn "Fields: #{e.message}"
+      @logger.warn 'Fields: #{e.message}'
   end # def get_fields
 end # class LogStash::Outputs::Solr
