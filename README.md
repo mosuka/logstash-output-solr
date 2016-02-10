@@ -92,10 +92,81 @@ output {
 }
 ```
 
+## Solr setup examples
+
+### How to setup Standalone Solr using data-driven schemaless mode.
+
+1.Download and install Solr
+
+```sh
+$ mkdir $HOME/solr
+$ cd $HOME/solr
+$ wget https://archive.apache.org/dist/lucene/solr/5.4.0/solr-5.4.0.tgz
+$ tar zxvf solr-5.4.0.tgz
+$ cd solr-5.4.0
+```
+
+2.Start standalone Solr
+
+```sh
+$ ./bin/solr start -p 8983 -s server/solr
+```
+
+3.Create core
+
+```sh
+$ ./bin/solr create -c collection1 -d server/solr/configsets/data_driven_schema_configs -n collection1_configs
+```
+
+### How to setup SolrCloud using data-driven schemaless mode (shards=1 and replicationfactor=2).
+
+1.Download and install ZooKeeper
+
+```sh
+$ mkdir $HOME/zookeeper
+$ cd $HOME/zookeeper
+$ wget https://archive.apache.org/dist/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz
+$ tar zxvf zookeeper-3.4.6.tar.gz
+$ cd zookeeper-3.4.6
+$ cp -p ./conf/zoo_sample.cfg ./conf/zoo.cfg
+```
+
+2.Start standalone ZooKeeper
+
+```sh
+$ ./bin/zkServer.sh start
+```
+
+3.Download an install Solr
+
+```sh
+$ mkdir $HOME/solr
+$ cd $HOME/solr
+$ wget https://archive.apache.org/dist/lucene/solr/5.4.0/solr-5.4.0.tgz
+$ tar zxvf solr-5.4.0.tgz
+$ cd solr-5.4.0
+$ ./server/scripts/cloud-scripts/zkcli.sh -zkhost localhost:2181 -cmd clear /solr
+$ ./server/scripts/cloud-scripts/zkcli.sh -zkhost localhost:2181 -cmd makepath /solr
+$ cp -pr server/solr server/solr1
+$ cp -pr server/solr server/solr2
+```
+
+4.Start SolrCloud
+
+```sh
+$ ./bin/solr start -h localhost -p 8983 -z localhost:2181/solr -s server/solr1
+$ ./bin/solr start -h localhost -p 8985 -z localhost:2181/solr -s server/solr2
+```
+
+5.Create collection
+
+```sh
+$ ./bin/solr create -c collection1 -d server/solr1/configsets/data_driven_schema_configs -n collection1_configs -shards 1 -replicationFactor 2
+```
 
 ## Need Help?
 
-Need help? Try #logstash on freenode IRC or the https://discuss.elastic.co/c/logstash discussion forum.
+Need help? Try #logstash on freenode IRC or the [https://discuss.elastic.co/c/logstash](https://discuss.elastic.co/c/logstash) discussion forum.
 
 ## Developing
 
@@ -130,17 +201,23 @@ bundle exec rspec
 #### 2.1 Run in a local Logstash clone
 
 - Edit Logstash `Gemfile` and add the local plugin path, for example:
+
 ```ruby
 gem "logstash-output-solr", :path => "/your/local/logstash-output-solr"
 ```
+
 - Install plugin
+
 ```sh
 bin/plugin install --no-verify
 ```
+
 - Run Logstash with your plugin
+
 ```sh
-bin/logstash -e 'filter {awesome {}}'
+bin/logstash -e 'output {solr {}}'
 ```
+
 At this point any modifications to the plugin code will be applied to this local Logstash setup. After modifying the plugin, simply rerun Logstash.
 
 #### 2.2 Run in an installed Logstash
@@ -148,13 +225,17 @@ At this point any modifications to the plugin code will be applied to this local
 You can use the same **2.1** method to run your plugin in an installed Logstash by editing its `Gemfile` and pointing the `:path` to your local plugin development directory or you can build the gem and install it using:
 
 - Build your plugin gem
+
 ```sh
 gem build logstash-output-solr.gemspec
 ```
+
 - Install the plugin from the Logstash home
+
 ```sh
 bin/plugin install /your/local/plugin/logstash-output-solr.gem
 ```
+
 - Start Logstash and proceed to test the plugin
 
 ## Contributing
